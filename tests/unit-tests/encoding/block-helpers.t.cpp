@@ -84,6 +84,15 @@ BOOST_AUTO_TEST_CASE(String)
   BOOST_CHECK_EQUAL(readString(b), "Hello, world!");
 }
 
+BOOST_AUTO_TEST_CASE(FloatPointNumber)
+{
+  float f=10.0f;
+  Block b=makeFloatPointNumberBlock(100,f);
+  BOOST_CHECK_EQUAL(b.type(), 100);
+  BOOST_CHECK_EQUAL(b.value_size(), 4);
+  BOOST_CHECK_EQUAL(readFloatPointNumber(b), f);
+}
+
 BOOST_AUTO_TEST_CASE(Data)
 {
   std::string buf1{1, 1, 1, 1};

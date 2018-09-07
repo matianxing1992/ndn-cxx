@@ -150,6 +150,40 @@ makeStringBlock(uint32_t type, const std::string& value);
 std::string
 readString(const Block& block);
 
+/** @brief Prepend a TLV element containing a float-point number.
+ *  @param encoder an EncodingBuffer or EncodingEstimator
+ *  @param type TLV-TYPE number
+ *  @param value a float-point number value
+ *  @sa makeFloatPointNumberBlock, readFloatPointNumber
+ */
+template<Tag TAG>
+size_t
+prependFloatPointNumberBlock(EncodingImpl<TAG>& encoder, uint32_t type, const float& value);
+
+extern template size_t
+prependFloatPointNumberBlock<EstimatorTag>(EncodingImpl<EstimatorTag>&, uint32_t, const float&);
+
+extern template size_t
+prependFloatPointNumberBlock<EncoderTag>(EncodingImpl<EncoderTag>&, uint32_t, const float&);
+
+
+
+/** @brief Create a TLV block containing a float-point number.
+ *  @param type TLV-TYPE number
+ *  @param value float-point number value
+ *  @sa prependFloatPointNumberBlock, readFloatPointNumber
+ */
+Block
+makeFloatPointNumberBlock(uint32_t type, const float& value);
+
+/** @brief Read TLV-VALUE of a TLV element as a float-point number.
+ *  @param block the TLV element
+ *  @return a string, may contain NUL octets
+ *  @sa prependFloatPointNumberBlock, makeFloatPointNumberBlock
+ */
+float
+readFloatPointNumber(const Block& block);
+
 /** @brief Create a TLV block copying TLV-VALUE from raw buffer.
  *  @param type TLV-TYPE number
  *  @param value raw buffer as TLV-VALUE

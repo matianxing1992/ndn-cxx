@@ -120,6 +120,66 @@ readString(const Block& block)
   return std::string(reinterpret_cast<const char*>(block.value()), block.value_size());
 }
 
+
+// ---- float ----
+
+
+template<Tag TAG>
+size_t
+prependFloatPointNumberBlock(EncodingImpl<TAG>& encoder, uint32_t type, const float& value)
+{
+  size_t valueLength = 2;
+  size_t totalLength = valueLength;
+  totalLength += encoder.prependVarNumber(valueLength);
+  totalLength += encoder.prependVarNumber(type);
+
+  return totalLength;
+}
+
+template size_t
+prependFloatPointNumberBlock<EstimatorTag>(EncodingImpl<EstimatorTag>&, uint32_t, const float&);
+
+template size_t
+prependFloatPointNumberBlock<EncoderTag>(EncodingImpl<EncoderTag>&, uint32_t, const float&);
+
+uint8_t* floatToArray(float floatVariable)
+{
+  uint8_t i;
+  uint8_t *charArray = new uint8_t(4);
+  uint8_t *pdata = (uint8_t*)&floatVariable;
+  for (i = 0; i<4; i++)
+  {
+    charArray[i] = *pdata++;
+  }
+  return charArray;
+}
+
+float ArrayToFloat(const uint8_t *array)
+{
+  float   floatVariable;
+  uint8_t  i;
+  void   *pf;
+  pf = &floatVariable;
+  const uint8_t* px = array;
+  for (i = 0; i<4; i++)
+  {
+    *((uint8_t*)pf + i) = *(px + i);
+  }
+  return floatVariable;
+}
+
+Block
+makeFloatPointNumberBlock(uint32_t type, const float& value)
+{
+  return makeBinaryBlock(type, floatToArray(value), 4);
+}
+
+float
+readFloatPointNumber(const Block& block)
+{
+  return ArrayToFloat(block.value());
+}
+
 // ---- binary ----
 
 Block
