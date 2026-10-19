@@ -217,6 +217,20 @@ public:
   InMemoryStorage::const_iterator
   end() const;
 
+  /** @brief Returns the first entry whose full name is not less than @p name.
+   *
+   *  Uses the existing ordered index in logarithmic time. Unlike find(), this
+   *  lookup does not apply freshness checks or update the replacement policy.
+   *  Returns end() if no such entry exists. Erasing an entry invalidates its iterator.
+   */
+  const_iterator
+  lowerBound(const Name& name) const
+  {
+    const auto& index = m_cache.get<byFullName>();
+    auto it = index.lower_bound(name);
+    return const_iterator(it == index.end() ? nullptr : &(*it)->getData(), &m_cache, it);
+  }
+
 NDN_CXX_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   /** @brief Update the entry when the entry is returned by the find() function
    *  according to derived class implemented replacement policy

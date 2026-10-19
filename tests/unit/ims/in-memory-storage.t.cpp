@@ -31,6 +31,9 @@
 
 #include <boost/mp11/list.hpp>
 
+#include <algorithm>
+#include <vector>
+
 namespace ndn::tests {
 
 BOOST_AUTO_TEST_SUITE(Ims)
@@ -40,6 +43,64 @@ using InMemoryStorages = boost::mp11::mp_list<InMemoryStoragePersistent,
                                               InMemoryStorageFifo,
                                               InMemoryStorageLfu,
                                               InMemoryStorageLru>;
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(LowerBoundPreservesFullNameRange, T, InMemoryStorages)
+{
+  for (const bool reverseInsertion : {false, true}) {
+    T ims;
+    const InMemoryStorage& storage = ims;
+    BOOST_CHECK(storage.lowerBound(Name("/range/item")) == storage.end());
+
+    const Name originalName("/range/item");
+    auto first = makeData(originalName);
+    first->setContent(Buffer{1});
+    signData(first);
+    auto second = makeData(originalName);
+    second->setContent(Buffer{2});
+    signData(second);
+    Name typedChild(originalName);
+    typedChild.appendImplicitSha256Digest(Buffer(32, 0x5a)).append("child");
+    std::vector<shared_ptr<Data>> packets = {
+      makeData("/range"), first, second, makeData("/range/item/child"),
+      makeData(typedChild), makeData("/range/next"),
+    };
+    if (reverseInsertion) {
+      std::reverse(packets.begin(), packets.end());
+    }
+    std::vector<Name> fullNames;
+    for (const auto& packet : packets) {
+      ims.insert(*packet);
+      fullNames.push_back(packet->getFullName());
+    }
+    std::sort(fullNames.begin(), fullNames.end());
+    auto queries = fullNames;
+    queries.insert(queries.end(), {Name("/"), originalName, Name("/range/item/absent"),
+                                   Name("/zzzzzzzzzzzzzzzzzzzz")});
+    for (const auto& query : queries) {
+      const auto expected = std::lower_bound(fullNames.begin(), fullNames.end(), query);
+      const auto found = storage.lowerBound(query);
+      if (expected == fullNames.end()) {
+        BOOST_CHECK(found == storage.end());
+      }
+      else {
+        BOOST_REQUIRE(found != storage.end());
+        BOOST_CHECK_EQUAL(found->getFullName(), *expected);
+      }
+    }
+
+    size_t exactNames = 0;
+    size_t descendants = 0;
+    for (auto it = storage.lowerBound(originalName);
+         it != storage.end() && originalName.isPrefixOf(it->getFullName()); ++it) {
+      ++descendants;
+      if (it->getName() == originalName) {
+        ++exactNames;
+      }
+    }
+    BOOST_CHECK_EQUAL(exactNames, 2);
+    BOOST_CHECK_EQUAL(descendants, 4);
+  }
+}
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Insertion, T, InMemoryStorages)
 {
